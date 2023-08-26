@@ -1,0 +1,102 @@
+use std::{io::{self, Write}, process, fmt::{Display, self}};
+
+enum MetaCommandError {
+    UnrecognisedCommand,
+}
+
+impl Display for MetaCommandError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", match self {
+            MetaCommandError::UnrecognisedCommand => "Unrecognised meta command",
+        })
+    }
+}
+
+enum PrepareError {
+    PrepareUnrecognisedStatement,
+}
+
+impl Display for PrepareError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", match self {
+            PrepareError::PrepareUnrecognisedStatement => "Unrecognised statement",
+        })
+    }
+}
+
+#[derive(Debug)]
+struct Stmt {
+    stmt_type: StmtType, 
+}
+
+#[derive(Debug)]
+enum StmtType {
+    Select,
+    Insert,
+}
+
+impl Stmt {
+    fn select() -> Self {
+        Self { stmt_type: StmtType::Select }
+    }
+
+    fn insert() -> Self {
+        Self { stmt_type: StmtType::Insert }
+    }
+}
+
+fn main() {
+    // REPL
+    let mut input = String::new();
+    loop {
+        let input = match get_input(&mut input) {
+            Ok(str) => str,
+            Err(err) => {
+                eprintln!("ERROR: Failed to read input, {err}");
+                continue;
+            }
+        };
+
+        if input[..1].eq_ignore_ascii_case(".") {
+            let input = &input[1..];
+            if let Err(err) = do_meta_cmd(input) {
+                println!("ERROR: {err}");
+            }
+            continue;
+        }
+
+        match prepare_stmt(input) {
+            Ok(stmt) => execute_stmt(stmt),
+            Err(err) => {
+                println!("ERROR: {err}");
+            }
+        }
+    }
+}
+
+fn do_meta_cmd(input: &str) -> Result<(), MetaCommandError> {
+    if input.eq_ignore_ascii_case("exit") {
+        println!("Goodbye");
+        process::exit(1);
+    }
+    Err(MetaCommandError::UnrecognisedCommand)
+}
+
+fn prepare_stmt(input: &str) -> Result<Stmt, PrepareError> {
+    if input[0..6].eq_ignore_ascii_case("select") {
+        Ok(Stmt::select())
+    }
+    Err(PrepareError::PrepareUnrecognisedStatement)
+}
+
+fn execute_stmt(stmt: Stmt) {
+    println!("Stmt: {stmt:?}");
+}
+
+fn get_input(input: &mut String) -> Result<&str, io::Error> {
+    input.clear();
+    print!("db > ");
+    io::stdout().flush()?;
+    io::stdin().read_line(input)?;
+    Ok(input.trim())
+}
