@@ -3,10 +3,13 @@ use std::{
     io::{self, Write},
     process,
 };
-
 use parsing::{prepare_stmt, Stmt, StmtType, Row};
+use table::Table;
 
 mod parsing;
+mod table;
+mod consts;
+mod vm;
 
 enum MetaCommandError {
     UnrecognisedCommand,
@@ -24,17 +27,10 @@ impl Display for MetaCommandError {
     }
 }
 
-// Rows stored in pages
-// Page stores as many rows as it can fit
-// Pages allocated as needed
-// Pages stored in an array
-struct Table {
-    name: String,
-    rows: Vec<Row>,
-}
 
 fn main() {
     let mut input = String::new();
+    let mut table = Table::new();
     loop {
         let input = match get_input(&mut input) {
             Ok(str) => str,
@@ -53,7 +49,7 @@ fn main() {
         }
 
         match prepare_stmt(input) {
-            Ok(stmt) => execute_stmt(stmt),
+            Ok(stmt) => execute_stmt(stmt, &mut table),
             Err(err) => {
                 println!("ERROR: {err}");
             }
@@ -69,11 +65,23 @@ fn do_meta_cmd(input: &str) -> Result<(), MetaCommandError> {
     Err(MetaCommandError::UnrecognisedCommand)
 }
 
-fn execute_stmt(stmt: Stmt) {
+fn execute_stmt(stmt: Stmt, table: &mut Table) {
     match stmt.stmt_type {
-        StmtType::Select => println!("Select stmt {stmt:?}"),
+        StmtType::Select => {
+            let mut rows = Vec::new();
+            for i in 0..table.num_rows {
+                let (page_num, byte_offset) = table.row_slot(i);
+                println!("{page_num}, {byte_offset}");
+                rows.push(table.get_row(page_num, byte_offset));
+            }
+            for row in rows.iter() {
+                println!("id: {} username: {} email: {}", 
+                    row.id, String::from_utf8(Vec::from(row.username)).unwrap(), String::from_utf8(Vec::from(row.email)).unwrap(),
+                );
+            }
+        },
         StmtType::Insert(row) => {
-
+            table.insert_row(&row).expect("fail");
         }
     }
 }
