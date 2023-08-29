@@ -1,14 +1,16 @@
-use crate::{Row, consts::{ROWS_PER_PAGE, PAGE_SIZE, ROW_SIZE, TABLE_MAX_PAGES, INT_SIZE, ID_OFFSET, USERNAME_OFFSET, TEXT_SIZE, EMAIL_OFFSET}};
+use crate::{
+    consts::{
+        EMAIL_OFFSET, EMAIL_SIZE, ID_OFFSET, ID_SIZE, PAGE_SIZE, ROWS_PER_PAGE, ROW_SIZE,
+        TABLE_MAX_PAGES, USERNAME_OFFSET, USERNAME_SIZE,
+    },
+    parsing::Row,
+};
 
 #[derive(Debug)]
 pub enum ExecuteError {
     TableFull,
 }
 
-// Rows stored in pages
-// Page stores as many rows as it can fit
-// Pages allocated as needed
-// Pages stored in an array
 #[derive(Debug)]
 pub struct Table {
     pub num_rows: usize,
@@ -25,7 +27,6 @@ impl Table {
 
     pub fn row_slot(&mut self, row_num: usize) -> (usize, usize) {
         let page_num = row_num / ROWS_PER_PAGE;
-        println!("Rows per page: {ROWS_PER_PAGE}");
         if self.pages.get(page_num).is_none() {
             self.pages.push(Vec::with_capacity(PAGE_SIZE));
         }
@@ -35,19 +36,26 @@ impl Table {
     }
 
     pub fn get_row(&self, page_num: usize, byte_offset: usize) -> Row {
-        let id_bytes = &mut [0; INT_SIZE];
-        let username_bytes = &mut [0; TEXT_SIZE];
-        let email_bytes = &mut [0; TEXT_SIZE];
+        let id_bytes = &mut [0; ID_SIZE];
+        let username_bytes = &mut [0; USERNAME_SIZE];
+        let email_bytes = &mut [0; EMAIL_SIZE];
 
-        let id_bytes_slice = &self.pages[page_num][(byte_offset + ID_OFFSET)..(byte_offset + ID_OFFSET + INT_SIZE)];
-        let username_bytes_slice = &self.pages[page_num][(byte_offset + USERNAME_OFFSET)..(byte_offset + USERNAME_OFFSET + TEXT_SIZE)];
-        let email_bytes_slice = &self.pages[page_num][(byte_offset + EMAIL_OFFSET)..(byte_offset + EMAIL_OFFSET + TEXT_SIZE)];
+        let id_bytes_slice =
+            &self.pages[page_num][(byte_offset + ID_OFFSET)..(byte_offset + ID_OFFSET + ID_SIZE)];
+        let username_bytes_slice = &self.pages[page_num]
+            [(byte_offset + USERNAME_OFFSET)..(byte_offset + USERNAME_OFFSET + USERNAME_SIZE)];
+        let email_bytes_slice = &self.pages[page_num]
+            [(byte_offset + EMAIL_OFFSET)..(byte_offset + EMAIL_OFFSET + EMAIL_SIZE)];
 
         id_bytes.copy_from_slice(id_bytes_slice);
         username_bytes.copy_from_slice(username_bytes_slice);
         email_bytes.copy_from_slice(email_bytes_slice);
         let id = u32::from_ne_bytes(*id_bytes);
-        Row { id, username: *username_bytes, email: *email_bytes }
+        Row {
+            id,
+            username: *username_bytes,
+            email: *email_bytes,
+        }
     }
 
     pub fn insert_row(&mut self, row: &Row) -> Result<(), ExecuteError> {
@@ -63,5 +71,4 @@ impl Table {
     }
 }
 
-mod tests {
-}
+mod tests {}

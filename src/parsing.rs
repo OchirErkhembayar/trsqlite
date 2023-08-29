@@ -1,6 +1,7 @@
-use std::fmt::{self, Display};
-
-use crate::consts::TEXT_SIZE;
+use std::{
+    fmt::{self, Display},
+};
+use crate::consts::{USERNAME_SIZE, EMAIL_SIZE};
 
 #[derive(Debug, PartialEq)]
 pub enum PrepareError {
@@ -29,8 +30,8 @@ pub struct Stmt {
 #[derive(Debug, PartialEq)]
 pub struct Row {
     pub id: u32,
-    pub username: [u8; TEXT_SIZE],
-    pub email: [u8; TEXT_SIZE],
+    pub username: [u8; USERNAME_SIZE],
+    pub email: [u8; EMAIL_SIZE],
 }
 
 #[derive(Debug, PartialEq)]
@@ -55,11 +56,11 @@ impl Stmt {
 
 pub fn prepare_stmt(input: &str) -> Result<Stmt, PrepareError> {
     let len = input.len();
-    if len > 6 && input[0..6].eq_ignore_ascii_case("select") {
+    if len >= 6 && input[0..6].eq_ignore_ascii_case("select") {
         return Ok(Stmt::select());
     }
 
-    if len > 6 && input[0..6].eq_ignore_ascii_case("insert") {
+    if len >= 6 && input[0..6].eq_ignore_ascii_case("insert") {
         let mut items = input.split_whitespace();
         items.next();
         let next_item = match items.next() {
@@ -79,18 +80,18 @@ pub fn prepare_stmt(input: &str) -> Result<Stmt, PrepareError> {
             None => return Err(PrepareError::SyntaxError),
         };
         let username_bytes = username_str.as_bytes();
-        if username_bytes.len() > TEXT_SIZE {
+        if username_bytes.len() > USERNAME_SIZE {
             return Err(PrepareError::SyntaxError);
         }
-        let mut username: [u8; TEXT_SIZE] = [0; TEXT_SIZE];
+        let mut username: [u8; USERNAME_SIZE] = [0; USERNAME_SIZE];
         for (i, v) in username_bytes.iter().enumerate() {
             username[i] = *v;
         }
         let email_bytes = email_str.as_bytes();
-        if email_bytes.len() > TEXT_SIZE {
+        if email_bytes.len() > EMAIL_SIZE {
             return Err(PrepareError::SyntaxError);
         }
-        let mut email: [u8; TEXT_SIZE] = [0; TEXT_SIZE];
+        let mut email: [u8; EMAIL_SIZE] = [0; EMAIL_SIZE];
         for (i, v) in email_bytes.iter().enumerate() {
             email[i] = *v;
         }
@@ -114,12 +115,12 @@ mod tests {
         let stmt = prepare_stmt(input);
         let stmt = stmt.expect("Oh no");
         let username_bytes = "a".as_bytes();
-        let mut username: [u8; TEXT_SIZE] = [0; TEXT_SIZE];
+        let mut username: [u8; USERNAME_SIZE] = [0; USERNAME_SIZE];
         for (i, v) in username_bytes.iter().enumerate() {
             username[i] = *v;
         }
         let email_bytes = "b".as_bytes();
-        let mut email: [u8; TEXT_SIZE] = [0; TEXT_SIZE];
+        let mut email: [u8; EMAIL_SIZE] = [0; EMAIL_SIZE];
         for (i, v) in email_bytes.iter().enumerate() {
             email[i] = *v;
         }
@@ -128,7 +129,7 @@ mod tests {
             username,
             email,
         });
-        assert_eq!(255, row.username.len());
+        assert_eq!(32, row.username.len());
         assert_eq!(255, row.email.len());
         assert_eq!(StmtType::Insert(row), stmt.stmt_type);
     }
