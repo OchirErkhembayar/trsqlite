@@ -1,12 +1,11 @@
 use repl::run;
 
-mod parsing;
-mod table;
 mod consts;
-mod vm;
+mod parsing;
 mod repl;
+mod table;
+mod vm;
 
 fn main() {
     run();
 }
-
