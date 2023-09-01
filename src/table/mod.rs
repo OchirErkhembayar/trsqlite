@@ -19,15 +19,20 @@ pub enum ExecuteError {
 pub struct Table {
     pub num_rows: usize,
     pager: Pager,
+    row_num: usize,
+    end_of_table: bool,
 }
 
 impl Table {
     pub fn db_open(file_name: &str) -> Self {
         let pager = Pager::new(file_name);
+        let num_rows = pager.file_length / ROW_SIZE;
 
         Self {
-            num_rows: pager.file_length / ROW_SIZE,
+            num_rows,
             pager,
+            row_num: num_rows,
+            end_of_table: true,
         }
     }
 
@@ -50,10 +55,9 @@ impl Table {
         }
     }
 
-    pub fn row_slot(&mut self, row_num: usize) -> (usize, usize) {
-        let page_num = row_num / ROWS_PER_PAGE;
-        let _page = self.pager.get_page(page_num);
-        let row_offset = row_num % ROWS_PER_PAGE;
+    pub fn cursor_val(&mut self) -> (usize, usize) {
+        let page_num = self.row_num / ROWS_PER_PAGE;
+        let row_offset = self.row_num % ROWS_PER_PAGE;
         let byte_offset = row_offset * ROW_SIZE;
         (page_num, byte_offset)
     }
@@ -85,12 +89,30 @@ impl Table {
         if self.pager.pages.len() > TABLE_MAX_PAGES {
             return Err(ExecuteError::TableFull);
         }
-        let (page_num, _) = self.row_slot(self.num_rows);
+        self.cursor_to_end();
+        let (page_num, _) = self.cursor_val();
         self.pager.append_to_page(page_num, &row.id.to_ne_bytes());
         self.pager.append_to_page(page_num, &row.username);
         self.pager.append_to_page(page_num, &row.email);
         self.num_rows += 1;
         Ok(())
+    }
+
+    pub fn cursor_to_start(&mut self) {
+        self.row_num = 0;
+        self.end_of_table = self.num_rows == 0;
+    }
+
+    pub fn cursor_to_end(&mut self) {
+        self.row_num = self.num_rows;
+        self.end_of_table = true;
+    }
+
+    pub fn advance_cursor(&mut self) {
+        self.row_num += 1;
+        if self.row_num >= self.num_rows {
+            self.end_of_table = true;
+        }
     }
 }
 

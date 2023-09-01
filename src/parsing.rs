@@ -111,7 +111,9 @@ pub fn prepare_stmt(input: &str) -> Result<Stmt, PrepareError> {
     Err(PrepareError::UnrecognisedStmt)
 }
 
+#[allow(unused_imports)]
 mod tests {
+    use super::*;
 
     #[test]
     fn prepare_insert_stmt() {

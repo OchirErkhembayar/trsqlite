@@ -77,9 +77,12 @@ impl Pager {
     }
 
     pub fn append_to_page(&mut self, page_num: usize, data: &[u8]) {
-        self.pages[page_num]
-            .as_mut()
-            .unwrap()
-            .extend_from_slice(data);
+        let page = self.pages[page_num].as_mut();
+        match page {
+            Some(page) => page.extend_from_slice(data),
+            None => {
+                self.pages[page_num] = Some(Vec::from(data));
+            }
+        }
     }
 }

@@ -84,8 +84,10 @@ fn execute_stmt(stmt: Stmt, table: &mut Table) -> ExecuteResult {
     match stmt.stmt_type {
         StmtType::Select => {
             let mut rows = Vec::new();
-            for i in 0..table.num_rows {
-                let (page_num, byte_offset) = table.row_slot(i);
+            table.cursor_to_start();
+            for _ in 0..table.num_rows {
+                let (page_num, byte_offset) = table.cursor_val();
+                table.advance_cursor();
                 rows.push(table.get_row(page_num, byte_offset));
             }
             ExecuteResult {
@@ -109,7 +111,9 @@ fn get_input(input: &mut String) -> Result<&str, io::Error> {
     Ok(input.trim())
 }
 
+#[allow(unused_imports)]
 mod tests {
+    use super::*;
 
     #[test]
     fn it_can_insert_and_read_a_single_statement() {
