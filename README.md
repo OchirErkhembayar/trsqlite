@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # File Format
 
 ## Database Header
@@ -42,3 +43,10 @@ An interior page contains K keys with K+1 pointers to child b-tree pages
     - The "pointer" is just a u32 page number of the child page
 
 
+=======
+# trsqlite
+## An SQLite clone in Rust that i'm writing for personal educational purposes
+
+Following a tutorial (in C) and attempting to follow in Rust.
+https://cstack.github.io/db_tutorial/
+>>>>>>> d16061e9ff3c5b183b4af616efce0b9344b1c82d

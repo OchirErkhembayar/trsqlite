@@ -1,12 +1,12 @@
-use std::{
-    fmt::{self, Display},
-};
-use crate::consts::{USERNAME_SIZE, EMAIL_SIZE};
+use crate::consts::{EMAIL_SIZE, USERNAME_SIZE};
+use std::fmt::{self, Display};
 
 #[derive(Debug, PartialEq)]
 pub enum PrepareError {
     UnrecognisedStmt,
     SyntaxError,
+    StringTooLong,
+    IdSyntaxError,
 }
 
 impl Display for PrepareError {
@@ -17,6 +17,8 @@ impl Display for PrepareError {
             match self {
                 PrepareError::UnrecognisedStmt => "Unrecognised statement",
                 PrepareError::SyntaxError => "Syntax error",
+                PrepareError::StringTooLong => "Maximum string length exceeded",
+                PrepareError::IdSyntaxError => "ID must be a positive integer",
             }
         )
     }
@@ -69,8 +71,11 @@ pub fn prepare_stmt(input: &str) -> Result<Stmt, PrepareError> {
         };
         let id: u32 = match next_item.parse() {
             Ok(id) => id,
-            Err(_) => return Err(PrepareError::SyntaxError),
+            Err(_) => return Err(PrepareError::IdSyntaxError),
         };
+        if id == 0 {
+            return Err(PrepareError::IdSyntaxError);
+        }
         let username_str = match items.next() {
             Some(item) => item,
             None => return Err(PrepareError::SyntaxError),
@@ -81,7 +86,7 @@ pub fn prepare_stmt(input: &str) -> Result<Stmt, PrepareError> {
         };
         let username_bytes = username_str.as_bytes();
         if username_bytes.len() > USERNAME_SIZE {
-            return Err(PrepareError::SyntaxError);
+            return Err(PrepareError::StringTooLong);
         }
         let mut username: [u8; USERNAME_SIZE] = [0; USERNAME_SIZE];
         for (i, v) in username_bytes.iter().enumerate() {
@@ -89,7 +94,7 @@ pub fn prepare_stmt(input: &str) -> Result<Stmt, PrepareError> {
         }
         let email_bytes = email_str.as_bytes();
         if email_bytes.len() > EMAIL_SIZE {
-            return Err(PrepareError::SyntaxError);
+            return Err(PrepareError::StringTooLong);
         }
         let mut email: [u8; EMAIL_SIZE] = [0; EMAIL_SIZE];
         for (i, v) in email_bytes.iter().enumerate() {
@@ -106,6 +111,7 @@ pub fn prepare_stmt(input: &str) -> Result<Stmt, PrepareError> {
     Err(PrepareError::UnrecognisedStmt)
 }
 
+#[allow(unused_imports)]
 mod tests {
     use super::*;
 
@@ -140,7 +146,7 @@ mod tests {
         let stmt = prepare_stmt(input);
         match stmt {
             Ok(_) => panic!("Should be error"),
-            Err(err) => assert_eq!(err, PrepareError::SyntaxError),
+            Err(err) => assert_eq!(err, PrepareError::StringTooLong),
         }
     }
 
@@ -150,7 +156,27 @@ mod tests {
         let stmt = prepare_stmt(input);
         match stmt {
             Ok(_) => panic!("Should be error"),
-            Err(err) => assert_eq!(err, PrepareError::SyntaxError),
+            Err(err) => assert_eq!(err, PrepareError::StringTooLong),
+        }
+    }
+
+    #[test]
+    fn id_negative() {
+        let input = "insert -1 a FOOO";
+        let stmt = prepare_stmt(input);
+        match stmt {
+            Ok(_) => unreachable!(),
+            Err(err) => assert_eq!(err, PrepareError::IdSyntaxError),
+        }
+    }
+
+    #[test]
+    fn id_zero() {
+        let input = "insert 0 a a";
+        let stmt = prepare_stmt(input);
+        match stmt {
+            Ok(_) => unreachable!(),
+            Err(err) => assert_eq!(err, PrepareError::IdSyntaxError),
         }
     }
 }
