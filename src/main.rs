@@ -1,11 +1,9 @@
-use repl::run;
+use interface::repl;
 
-mod consts;
-mod parsing;
-mod repl;
-mod table;
 mod vm;
+mod db;
+mod interface;
 
 fn main() {
-    run();
+    repl::run();
 }
