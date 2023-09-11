@@ -1,5 +1,7 @@
 use std::{iter::Peekable, str::Chars};
 
+use super::parser::SyntaxError;
+
 #[derive(Debug, PartialEq)]
 pub struct Token {
     pub token_type: TokenType,
@@ -31,7 +33,7 @@ pub enum TokenType {
     SemiColon,
 }
 
-pub fn tokenize(chars: &mut Peekable<Chars>) -> Vec<Token> {
+pub fn tokenize(chars: &mut Peekable<Chars>) -> Result<Vec<Token>, SyntaxError> {
     let mut tokens = Vec::new();
     while let Some(char) = chars.next() {
         let token = match char {
@@ -51,11 +53,11 @@ pub fn tokenize(chars: &mut Peekable<Chars>) -> Vec<Token> {
 
                 Token::with_lexeme(TokenType::Ident, lexeme)
             }
-            _ => todo!("{char} not yet implemented"),
+            _ => return Err(SyntaxError),
         };
         tokens.push(token);
     }
-    tokens
+    Ok(tokens)
 }
 
 #[cfg(test)]
@@ -72,6 +74,6 @@ mod tests {
             Token::without_lexeme(TokenType::Comma),
             Token::with_lexeme(TokenType::Ident, "bar".to_string()),
             Token::without_lexeme(TokenType::SemiColon),
-        ], tokens);
+        ], tokens.unwrap());
     }
 }

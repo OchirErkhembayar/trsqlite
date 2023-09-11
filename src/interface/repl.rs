@@ -4,7 +4,7 @@ use std::{
     process,
 };
 
-use crate::vm::{parser::parse_stmt, tokenizer::tokenize};
+use crate::vm::{parser::parse_stmt, tokenizer::tokenize, VM};
 
 pub fn run() {
     println!(
@@ -23,6 +23,7 @@ Use \".open FILENAME\" to reopen a persistent database
     let mut buffer = String::new();
 
     let stdin = io::stdin();
+    let mut vm = VM::new();
     loop {
         buffer.clear();
         print!("tsqplite> ");
@@ -44,19 +45,21 @@ Use \".open FILENAME\" to reopen a persistent database
             continue;
         }
 
-        if buffer.trim()[0..1].eq_ignore_ascii_case(".") {
+        if buffer.trim().starts_with(".") {
             match execute_meta_cmd(&buffer.trim()[1..]) {
                 Ok(_) => (),
-                Err(err) => {
-                    eprintln!("ERROR: {err}\nPlease try again.");
-                    continue;
-                }
+                Err(err) => eprintln!("ERROR: {err}\nPlease try again."),
             }
-
             continue;
         }
 
-        let tokens = tokenize(&mut buffer.trim().chars().peekable());
+        let tokens = match tokenize(&mut buffer.trim().chars().peekable()) {
+            Ok(tokens) => tokens,
+            Err(err) => {
+                eprintln!("ERROR: {err}");
+                continue;
+            }
+        };
         println!("Tokens: {tokens:?}");
         let stmt = match parse_stmt(&mut tokens.iter().peekable()) {
             Ok(stmt) => stmt,
@@ -66,6 +69,8 @@ Use \".open FILENAME\" to reopen a persistent database
             }
         };
         println!("{stmt:?}");
+        let result = vm.execute(stmt);
+        println!("{result:?}");
     }
 }
 
