@@ -26,7 +26,7 @@ Use \".open FILENAME\" to reopen a persistent database
     let mut vm = VM::new();
     loop {
         buffer.clear();
-        print!("tsqplite> ");
+        print!("\ntsqplite> ");
         stdout.flush().unwrap_or_else(|err| {
             eprintln!("ERROR: Something went wrong: {err}");
             process::exit(1);
@@ -46,7 +46,7 @@ Use \".open FILENAME\" to reopen a persistent database
         }
 
         if buffer.trim().starts_with(".") {
-            match execute_meta_cmd(&buffer.trim()[1..]) {
+            match execute_meta_cmd(&buffer.trim()[1..], &mut vm) {
                 Ok(_) => (),
                 Err(err) => eprintln!("ERROR: {err}\nPlease try again."),
             }
@@ -90,7 +90,7 @@ impl Display for MetaCmdError {
     }
 }
 
-fn execute_meta_cmd(cmd: &str) -> Result<(), MetaCmdError> {
+fn execute_meta_cmd(cmd: &str, vm: &mut VM) -> Result<(), MetaCmdError> {
     match cmd {
         "exit" => {
             println!("Goodbye!");
@@ -101,8 +101,19 @@ fn execute_meta_cmd(cmd: &str) -> Result<(), MetaCmdError> {
                 "Available commands:
 .exit - exit the program
 .help - see this
+.tables - a list of all the tables
 "
             );
+            Ok(())
+        }
+        "tables" => {
+            let tables = vm.get_tables();
+            if tables.is_empty() {
+                println!("No tables");
+            }
+            for (name, page) in tables {
+                println!("Name: {name} Page: {page}");
+            }
             Ok(())
         }
         _ => Err(MetaCmdError::UnrecognizedCmd),

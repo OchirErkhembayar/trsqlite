@@ -23,6 +23,10 @@ impl VM {
             _ => ExecuteResult::without_rows(false),
         }
     }
+
+    pub fn get_tables(&self) -> Vec<(&str, u32)> {
+        self.db.get_tables()
+    }
 }
 
 #[derive(Debug)]
