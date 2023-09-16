@@ -90,6 +90,13 @@ impl Pager {
         })
     }
 
+    pub fn add_table(&self) {
+        // Check which page is free
+        // Add a key to master table
+        // Add page number to master table's new key
+        // Add header data to the new page
+    }
+
     pub fn get_tables(&self) -> Vec<(&str, u32)> {
         self.master_table
             .iter()

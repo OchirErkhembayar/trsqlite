@@ -23,6 +23,10 @@ impl DB {
         }
     }
 
+    pub fn create_table(&mut self, table: Table) {
+        self.pager.add_table(table.name);
+    }
+
     pub fn get_tables(&self) -> Vec<(&str, u32)> {
         self.pager.get_tables()
     }
@@ -40,10 +44,30 @@ impl DB {
 
 pub struct Headers;
 
-pub struct Table {
-    name: String,
-    page_num: u32,
+#[derive(Debug)]
+enum DataType {
+    VarChar,
+    Int,
+    Float,
+    Bool,
 }
 
 #[derive(Debug)]
-pub struct Row;
+pub struct Column {
+    data_type: DataType,
+    name: String,
+}
+
+#[derive(Debug)]
+pub struct Table {
+    name: String,
+    columns: Vec<Column>,
+    page_num: u32,
+    rows: Vec<Row>,
+}
+
+#[derive(Debug)]
+pub struct Row {
+    id: u32,
+    cols: Vec<Column>,
+}
